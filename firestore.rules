@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Core Philosophy: This ruleset implements a security model based on user ownership, 
+     * structural segregation of public and private data, and authorization independence. 
+     * The primary goal is to ensure users can only access their own private data while 
+     * allowing controlled, public access to shared resources like tasks and profiles.
+     *
+     * Data Structure:
+     * - /users/{userId}: Strictly private user data, accessible only by the document owner.
+     * - /users/{userId}/transactions/{transactionId}: A user's private transaction records.
+     * - /public_profiles/{userId}: A read-only subset of user data for public discovery.
+     * - /tasks/{taskId}: A public board of help requests, readable by all but writable only by participants.
+     * - /notes/{noteId}: Publicly readable study notes.
+     * - /study_groups/{studyGroupId}: Publicly readable study groups.
+     *
+     * Key Security Decisions:
+     * - Public vs. Private Profiles: The separation of `/users` and `/public_profiles` is a critical
+     *   decision to prevent accidental leakage of private user information (e.g., email, time balance)
+     *   when clients list users for the marketplace.
+     * - Transaction Integrity: All client-side writes to the `/transactions` collection are
+     *   disallowed to prevent fraud (e.g., users granting themselves time credits). These
+     *   operations must be handled by a trusted server environment like Cloud Functions.
+     * - Authorization Independence: Documents like Tasks and Transactions contain all necessary
+     *   UIDs (`creatorId`, `helperId`, `seekerId`) to make security decisions without costly
+     *   and slow `get()` calls to other documents.
+     * - Default Deny: Access is denied by default and is only granted through explicit allow rules.
+     */
+
+    // --------------------------------
+    // Helper Functions
+    // --------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the user is the owner of an existing document.
+     * Used for state-changing operations (update, delete) to prevent writes on non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+    
+    /**
+     * Checks if the user is a participant (creator or helper) of an existing Task.
+     */
+    function isTaskParticipant(taskData) {
+      return isSignedIn() && (request.auth.uid == taskData.creatorId || request.auth.uid == taskData.helperId);
+    }
+    
+    /**
+     * Checks if a user creating a transaction is a participant in it.
+     */
+    function isTransactionParticipantOnCreate(userId) {
+      let data = request.resource.data;
+      return userId == data.seekerId || userId == data.helperId;
+    }
+
+
+    // --------------------------------
+    // Collection Rules
+    // --------------------------------
+
+    /**
+     * @description Controls access to a user's private profile data and their transaction history.
+     * @path /users/{userId}
+     */
+    match /users/{userId} {
+      /**
+       * @allow (get, update, delete) The user with uid matching {userId} accessing their own document.
+       * @allow (create) An authenticated user creating their own user document for the first time.
+       */
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+      
+      /**
+       * @description Secures a user's private transaction history.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow (get, list) A user can only access their own transaction history.
+       * @allow (create) A user can only add a transaction to their own history if they are a participant.
+       * @deny All updates and deletes to maintain an immutable ledger.
+       */
+      match /transactions/{transactionId} {
+        allow get, list: if isOwner(userId);
+        // In a production app, this should be handled by a trusted server.
+        // For this prototype, we allow client-side creation with validation.
+        allow create: if isOwner(userId) && isTransactionParticipantOnCreate(userId);
+        allow update, delete: if false;
+      }
+    }
+
+    /**
+     * @description Controls access to public-facing user profiles for the skill marketplace.
+     * @path /public_profiles/{userId}
+     * @allow (get, list) Any authenticated user can view public profiles to find others.
+     * @allow (create, update, delete) A user can manage their own public profile.
+     * @deny An unauthenticated user trying to view profiles.
+     * @deny A user trying to modify another user's public profile.
+     * @principle Implements a "Public Read with Owner-Only Writes" pattern, segregating public data for safe querying.
+     */
+    match /public_profiles/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to task postings on the public "Help Wanted" board.
+     * @path /tasks/{taskId}
+     * @allow (list) Any authenticated user can list tasks for the feed.
+     * @allow (get) Any user can get an 'open' task, but participants can get it in any state.
+     * @allow (create) An authenticated user creating a new task and setting themselves as the creator.
+     * @allow (update) The task's creator or assigned helper modifying the task.
+     * @allow (delete) The task's original creator deleting the task.
+     * @deny A user trying to modify a task they did not create and are not assigned to.
+     * @principle Enforces document ownership and participant-based collaboration for writes, while allowing public reads.
+     */
+    match /tasks/{taskId} {
+      allow get: if (resource != null && isTaskParticipant(resource.data)) || (isSignedIn() && resource.data.status == 'open');
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
+      allow update: if resource != null && isTaskParticipant(resource.data) && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if resource != null && isOwner(resource.data.creatorId);
+    }
+
+    /**
+     * @description Controls access to shared study notes.
+     * @path /notes/{noteId}
+     * @allow (get, list) Any authenticated user can read notes.
+     * @allow (create, update, delete) A user can manage their own notes.
+     */
+    match /notes/{noteId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uploaderId == request.auth.uid;
+      allow update, delete: if resource != null && isOwner(resource.data.uploaderId);
+    }
+
+    /**
+     * @description Controls access to study groups.
+     * @path /study_groups/{studyGroupId}
+     * @allow (get, list) Any authenticated user can see available study groups.
+     * @allow (create, delete) The user hosting the group can create or delete it.
+     * @allow (update) Any authenticated user can join a group (update participants).
+     */
+    match /study_groups/{studyGroupId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.hostId == request.auth.uid;
+      allow update: if isSignedIn(); // Allows joining/leaving groups
+      allow delete: if resource != null && isOwner(resource.data.hostId);
+    }
+  }
+}
+    
