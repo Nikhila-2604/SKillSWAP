@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a student user on the Skill-Barter platform, including their profile, skills, and time-credit balance.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity (Firebase Auth UID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The institutional email address of the user (.edu domain restricted).",
+          "format": "email"
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biographical description provided by the user, highlighting their interests or academic focus."
+        },
+        "skills": {
+          "type": "array",
+          "description": "A list of skills the user possesses and can offer to others.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeBalance": {
+          "type": "number",
+          "description": "The current time-credit balance of the user. (1 hour = 1 credit)."
+        },
+        "rating": {
+          "type": "number",
+          "description": "An aggregate rating score for the user, based on completed tasks."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "timeBalance"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a help request or a 'Help Wanted' post created by a student.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "creatorId": {
+          "type": "string",
+          "description": "Reference to the User who created this task. (Relationship: User 1:N Task)"
+        },
+        "helperId": {
+          "type": "string",
+          "description": "Reference to the User who has taken on this task, if any. (Relationship: User 1:N Task)"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the task, e.g., 'Tutoring', 'Coding Help', 'Design'."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the help needed for the task."
+        },
+        "durationHours": {
+          "type": "number",
+          "description": "The estimated duration of the task in hours, which corresponds to the time-credit cost."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task ('open', 'pending', 'completed')."
+        },
+        "location": {
+          "type": "string",
+          "description": "The preferred location for the task to be performed, e.g., 'Online', 'Library', 'Campus Cafe'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the task was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "creatorId",
+        "category",
+        "description",
+        "durationHours",
+        "status",
+        "location",
+        "createdAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Records the transfer of Time-Credits between a seeker (task creator) and a helper for a completed task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to the Task this transaction is associated with. (Relationship: Task 1:N Transaction)"
+        },
+        "helperId": {
+          "type": "string",
+          "description": "Reference to the User who provided help and received credits. (Relationship: User 1:N Transaction)"
+        },
+        "seekerId": {
+          "type": "string",
+          "description": "Reference to the User who requested help and transferred credits. (Relationship: User 1:N Transaction)"
+        },
+        "hoursTransferred": {
+          "type": "number",
+          "description": "The number of time-credits transferred in this transaction."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The date and time when the transaction occurred.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "taskId",
+        "helperId",
+        "seekerId",
+        "hoursTransferred",
+        "timestamp"
+      ]
+    },
+    "Note": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Note",
+      "type": "object",
+      "description": "Represents a piece of study material or note shared by a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID for the note." },
+        "title": { "type": "string", "description": "The title of the note." },
+        "uploaderId": { "type": "string", "description": "The UID of the user who uploaded the note." },
+        "uploaderName": { "type": "string", "description": "The name of the uploader." },
+        "subject": { "type": "string", "description": "The academic subject of the note." },
+        "content": { "type": "string", "description": "The text content of the note." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags or topics related to the note." },
+        "upvotes": { "type": "number", "description": "The number of upvotes the note has received." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the note was created." }
+      },
+      "required": ["id", "title", "uploaderId", "uploaderName", "subject", "content", "upvotes", "createdAt"]
+    },
+    "StudyGroup": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudyGroup",
+      "type": "object",
+      "description": "Represents a study group session organized by a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID for the study group." },
+        "subject": { "type": "string", "description": "The subject of the study group." },
+        "hostId": { "type": "string", "description": "The UID of the user hosting the group." },
+        "hostName": { "type": "string", "description": "The name of the host." },
+        "scheduledTime": { "type": "string", "format": "date-time", "description": "The scheduled date and time for the group meeting." },
+        "participantIds": { "type": "array", "items": { "type": "string" }, "description": "An array of UIDs of users participating in the group." },
+        "status": { "type": "string", "enum": ["upcoming", "live", "full", "completed"], "description": "The current status of the study group." }
+      },
+      "required": ["id", "subject", "hostId", "hostName", "scheduledTime", "participantIds", "status"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores the full, private profile data for each user. Access is strictly limited to the authenticated user whose `uid` matches `{userId}`. This includes sensitive fields like `email` and `timeBalance`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the user, serving as the document ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/public_profiles/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores a publicly viewable subset of user profile data (name, bio, skills, rating) for the Skill Marketplace. This collection enables secure listing (QAPs) without exposing private user information. Includes denormalized fields like `name`, `bio`, `skills`, `rating` from the `User` entity.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the user, mirroring the ID in the /users collection."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Contains all help-wanted task postings. Only tasks with `status: \"open\"` are publicly readable by all authenticated users for the dashboard feed. The `creatorId` and assigned `helperId` have explicit modify rights. Includes `creatorId` and `helperId` for authorization independence.",
+          "params": [
+            {
+              "name": "taskId",
+              "description": "A unique identifier for the task posting."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Records all time-credit transfers for a specific user. Each transaction document is private and accessible only by the user whose subcollection it resides in.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the user."
+            },
+            {
+              "name": "transactionId",
+              "description": "A unique identifier for the transaction record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/notes/{noteId}",
+        "definition": {
+          "entityName": "Note",
+          "schema": { "$ref": "#/backend/entities/Note" },
+          "description": "A global collection of all user-submitted notes, publicly readable for the Notes marketplace.",
+          "params": [{ "name": "noteId", "description": "A unique identifier for the note." }]
+        }
+      },
+      {
+        "path": "/study_groups/{studyGroupId}",
+        "definition": {
+          "entityName": "StudyGroup",
+          "schema": { "$ref": "#/backend/entities/StudyGroup" },
+          "description": "A global collection of all user-created study groups, publicly readable for discovery.",
+          "params": [{ "name": "studyGroupId", "description": "A unique identifier for the study group." }]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed following the core principles of Authorization Independence, Structural Segregation, and Queryability for all collections, ensuring a secure, scalable, and easily debuggable system. \n\n**Authorization Independence (CRITICAL):**\nThis design meticulously avoids hierarchical authorization dependencies that would require `get()` calls in security rules. For `User` profiles, the primary collection `/users/{userId}` enforces strict owner-only access, with `userId` directly matching `request.auth.uid`. For entities like `Task` and `Transaction`, all necessary authorization context (`creatorId`, `helperId`, `seekerId`) is denormalized and stored directly within each respective document. This allows security rules to evaluate access permissions atomically by inspecting the document's own fields, thus eliminating complex cross-document `get()` operations and supporting robust atomic batch writes or transactions.\n\n**Queryability & Authorization (QAPs):**\nTo support secure and efficient `list` operations (QAPs - Queries are not Filters), the structure employs segregation:\n*   **Skill Marketplace (`/public_profiles`):** A dedicated collection `/public_profiles/{userId}` is introduced. This collection stores only the public-facing aspects of a user's profile (name, bio, skills, rating). This structural segregation ensures that the 'Skill Marketplace' can be efficiently queried and listed by any authenticated user without exposing private information (like email or time balance) or requiring complex field-level security checks within rules. The security rules for this collection will simply allow all authenticated users to `read` documents, validating that requested documents conform to the public nature.\n*   **Real-time Task Feed (`/tasks`):** The `/tasks/{taskId}` collection is designed to support the 'Help Wanted' dashboard. For listing purposes, security rules will permit read access only for tasks with `status: 'open'`. This works in conjunction with client-side queries that explicitly filter for `status == 'open'`, ensuring that rules validate the client's intent rather than acting as a hidden filter. This enables efficient and secure retrieval of open tasks without inadvertently exposing sensitive task states.\n*   **The Vault (`/users/{userId}/transactions`):** User transactions are stored in a subcollection under the user's private document (`/users/{userId}/transactions/{transactionId}`). This is the most secure pattern for user-owned data. Security rules can simply grant `list` and `get` access if the `request.auth.uid` matches the `{userId}` in the path, ensuring a user can only ever access their own transaction history. This completely prevents data leakage and doesn't require complex query validation in the rules."
+  }
+}
+    
