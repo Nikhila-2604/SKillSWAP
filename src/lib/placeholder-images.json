@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "A smiling student with a backpack in a campus setting.",
+      "imageUrl": "https://images.unsplash.com/photo-1621274790572-7c32596bc67f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzdHVkZW50JTIwcG9ydHJhaXR8ZW58MHx8fHwxNzcxNDMxODExfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student portrait"
+    },
+    {
+      "id": "2",
+      "description": "A student working on a laptop in a library.",
+      "imageUrl": "https://images.unsplash.com/photo-1508780709619-79562169bc64?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzdHVkZW50JTIwbGFwdG9wfGVufDB8fHx8MTc3MTQyODQyOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student laptop"
+    },
+    {
+      "id": "3",
+      "description": "A person painting on a canvas.",
+      "imageUrl": "https://images.unsplash.com/photo-1613746203812-717e6e5db3da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhcnRpc3QlMjBwYWludGluZ3xlbnwwfHx8fDE3NzE0OTg1MjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "artist painting"
+    },
+    {
+      "id": "4",
+      "description": "A student reading a book under a tree.",
+      "imageUrl": "https://images.unsplash.com/photo-1491309055486-24ae511c15c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzdHVkZW50JTIwcmVhZGluZ3xlbnwwfHx8fDE3NzE1MDk5NDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student reading"
+    }
+  ]
+}
